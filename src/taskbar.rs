@@ -16,6 +16,7 @@ pub struct TaskbarInfo {
   pub edge: TaskbarEdge,
   pub size: (i32, i32),
 }
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TaskbarEdge {
   Top,

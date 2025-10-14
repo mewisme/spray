@@ -30,7 +30,7 @@ pub fn setup_animation(mut commands: Commands, asset_server: Res<AssetServer>) {
     FrameAnimation {
       frames,
       current: 0,
-      timer: Timer::new(Duration::from_millis(200), TimerMode::Repeating), // 5 FPS
+      timer: Timer::new(Duration::from_millis(200), TimerMode::Repeating),
     },
   ));
 }
