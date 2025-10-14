@@ -176,13 +176,30 @@ jobs:
           fi
         shell: bash
 
-      - name: Check DLL dependencies
+      - name: Verify binary architecture
         run: |
           $binary = "${{ matrix.binary_path }}"
-          Write-Host "Checking DLL dependencies..."
-          dumpbin /DEPENDENTS $binary 2>&1 | Select-String "\.dll"
+          Write-Host "Verifying binary architecture..."
+
+          # Read PE header
+          $bytes = [System.IO.File]::ReadAllBytes($binary)
+
+          # Check if x64
+          $peOffset = [BitConverter]::ToInt32($bytes, 0x3C)
+          $machine = [BitConverter]::ToUInt16($bytes, $peOffset + 4)
+
+          if ($machine -eq 0x8664) {
+            Write-Host "✅ Binary is x64 (AMD64)"
+          } elseif ($machine -eq 0x014C) {
+            Write-Host "⚠️ Binary is x86 (i386)"
+          } else {
+            Write-Host "❓ Unknown architecture: 0x$($machine.ToString('X4'))"
+          }
+
+          Write-Host "`nBinary info:"
+          Write-Host "- Size: $([Math]::Round($bytes.Length / 1MB, 2)) MB"
+          Write-Host "- Path: $binary"
         shell: pwsh
-        continue-on-error: true
 
       - name: Build debug version for troubleshooting
         run: |
