@@ -1,0 +1,44 @@
+[package]
+name = "arisu"
+version = "0.0.1"
+edition = "2021"
+build = "build.rs"
+
+[[bin]]
+name = "Arisu"
+path = "src/main.rs"
+
+[dependencies]
+bevy = { version = "0.14", features = [
+  "bevy_winit",
+  "bevy_render",
+  "bevy_sprite",
+  "png",
+] }
+bevy_embedded_assets = "0.11"
+global-hotkey = "0.5"
+crossbeam-channel = "0.5"
+windows = { version = "0.56", features = [
+  "Win32_Foundation",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_UI_Shell",
+  "Win32_Graphics_Gdi",
+] }
+raw-window-handle = "0.6"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1.12"
+
+[profile.dev]
+opt-level = 0
+debug = 1
+overflow-checks = false
+incremental = true
+codegen-units = 256
+lto = "off"
+
+[profile.release]
+opt-level = 2
+lto = true
+codegen-units = 256
+debug = 0
