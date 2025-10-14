@@ -1,6 +1,6 @@
 [package]
 name = "arisu"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 build = "build.rs"
 authors = ["Mew <mauminh.nguyen@gmail.com>"]
@@ -14,12 +14,10 @@ name = "Arisu"
 path = "src/main.rs"
 
 [dependencies]
-bevy = { version = "0.14", default-features = false, features = [
+bevy = { version = "0.14", features = [
   "bevy_winit",
   "bevy_render",
   "bevy_sprite",
-  "bevy_core_pipeline",
-  "bevy_asset",
   "png",
 ] }
 bevy_embedded_assets = "0.11"
