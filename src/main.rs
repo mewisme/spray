@@ -28,6 +28,7 @@ fn main() {
   let config = load_or_create_config();
   let window_width = config.frame_width;
   let window_height = config.frame_height;
+  let window_title = config.window_title.clone();
 
   App::new()
     .add_plugins(EmbeddedAssetPlugin::default())
@@ -35,7 +36,7 @@ fn main() {
     .insert_resource(AnimControl::default())
     .add_plugins(DefaultPlugins.set(WindowPlugin {
       primary_window: Some(Window {
-        title: "Arisu".into(),
+        title: window_title.into(),
         transparent: true,
         decorations: false,
         resizable: false,

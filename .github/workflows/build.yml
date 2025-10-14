@@ -130,6 +130,40 @@ jobs:
 
       - name: Build binary
         run: cargo build --release --target ${{ matrix.target }}
+        env:
+          RUSTFLAGS: "-C target-cpu=x86-64 -C opt-level=3"
+
+      - name: Test binary can execute
+        run: |
+          $binary = "${{ matrix.binary_path }}"
+          if (Test-Path $binary) {
+            Write-Host "Binary exists at: $binary"
+            $fileInfo = Get-Item $binary
+            Write-Host "File size: $($fileInfo.Length) bytes"
+            Write-Host "Created: $($fileInfo.CreationTime)"
+            
+            # Try to get file version info
+            try {
+              $versionInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($binary)
+              Write-Host "File version: $($versionInfo.FileVersion)"
+              Write-Host "Product version: $($versionInfo.ProductVersion)"
+            } catch {
+              Write-Host "Could not get version info"
+            }
+            
+            # Check if it's a valid PE file
+            $header = [System.IO.File]::ReadAllBytes($binary)[0..1]
+            if ($header[0] -eq 0x4D -and $header[1] -eq 0x5A) {
+              Write-Host "✅ Valid PE executable (MZ header found)"
+            } else {
+              Write-Host "❌ Invalid PE executable"
+              exit 1
+            }
+          } else {
+            Write-Host "❌ Binary not found"
+            exit 1
+          }
+        shell: pwsh
 
       - name: Display binary size
         run: |
@@ -142,11 +176,41 @@ jobs:
           fi
         shell: bash
 
-      - name: Upload binary
+      - name: Check DLL dependencies
+        run: |
+          $binary = "${{ matrix.binary_path }}"
+          Write-Host "Checking DLL dependencies..."
+          dumpbin /DEPENDENTS $binary 2>&1 | Select-String "\.dll"
+        shell: pwsh
+        continue-on-error: true
+
+      - name: Build debug version for troubleshooting
+        run: |
+          # Temporarily remove windows subsystem for debug build
+          $mainFile = "src/main.rs"
+          $content = Get-Content $mainFile -Raw
+          $content = $content -replace '#!\[windows_subsystem = "windows"\]', '// #![windows_subsystem = "windows"]'
+          Set-Content $mainFile $content
+
+          cargo build --target ${{ matrix.target }}
+
+          # Restore original
+          git checkout $mainFile
+        shell: pwsh
+        continue-on-error: true
+
+      - name: Upload release binary
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.binary_path }}
+
+      - name: Upload debug binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}-debug
+          path: target/${{ matrix.target }}/debug/Arisu.exe
+        continue-on-error: true
 
   release:
     name: Create Release
@@ -181,13 +245,116 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
+      - name: Create release package
+        run: |
+          mkdir -p release-package
+          cp Arisu-windows-x86_64/Arisu.exe release-package/
+          cp README.md release-package/
+          cp CUSTOM_FRAMES.md release-package/
+          cp TROUBLESHOOTING.md release-package/
+
+          # Create example config
+          cat > release-package/arisu.config.example.json << 'EOF'
+          {
+            "fps": 5,
+            "auto_startup": false,
+            "frame_digits": 4,
+            "frame_width": 128.0,
+            "frame_height": 128.0,
+            "window_title": "Arisu"
+          }
+          EOF
+
+          # Create quick start guide
+          cat > release-package/QUICKSTART.txt << 'EOF'
+          Arisu Desktop Pet - Quick Start Guide
+          =====================================
+
+          1. Run Arisu.exe - the app will appear above your taskbar
+          2. Drag it anywhere on screen
+          3. Edit arisu.config.json to customize (auto-created on first run)
+
+          For custom animations:
+          - Create folder: assets/frames/
+          - Put your PNG frames: frame_0001.png, frame_0002.png, etc.
+          - See CUSTOM_FRAMES.md for details
+
+          Requirements:
+          - Windows 10/11
+          - No additional runtime needed
+
+          If app doesn't start:
+          - See TROUBLESHOOTING.md for detailed solutions
+          - Check Windows Defender/Antivirus
+          - Try running as administrator
+          - Download debug version for error messages
+
+          More info: https://github.com/mewisme/arisu
+          EOF
+
+          ls -la release-package/
+        shell: bash
+
+      - name: Prepare release notes
+        id: release-notes
+        run: |
+          cat > release-notes.md << 'EOF'
+          ${{ steps.commit-info.outputs.description_raw }}
+
+          ---
+
+          ## 📦 Files Included
+
+          - **Arisu.exe** - Main executable (release build)
+          - **arisu.config.example.json** - Example configuration file
+          - **README.md** - Full documentation
+          - **CUSTOM_FRAMES.md** - Guide for custom animations
+          - **TROUBLESHOOTING.md** - Fix common issues
+          - **QUICKSTART.txt** - Quick start guide
+
+          ## 🚀 Quick Start
+
+          1. Download `Arisu.exe`
+          2. Run it - the app will appear above your taskbar
+          3. Drag to move, edit `arisu.config.json` to customize
+
+          ## ⚠️ Troubleshooting
+
+          **If app doesn't start:**
+          1. Check Windows Defender - it may block the executable
+          2. Right-click → Properties → Unblock
+          3. Try running as administrator
+          4. See **TROUBLESHOOTING.md** for detailed fixes
+          5. Download the `-debug` artifact for error messages
+
+          **Requirements:**
+          - Windows 10/11 (64-bit)
+          - No additional runtime needed
+
+          ## 🔗 Links
+
+          - [Full Documentation](README.md)
+          - [Custom Frames Guide](CUSTOM_FRAMES.md)
+          - [Report Issues](https://github.com/${{ github.repository }}/issues)
+          EOF
+
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat release-notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        shell: bash
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             Arisu-windows-x86_64/Arisu.exe
+            release-package/arisu.config.example.json
+            release-package/README.md
+            release-package/CUSTOM_FRAMES.md
+            release-package/TROUBLESHOOTING.md
+            release-package/QUICKSTART.txt
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v{0}', needs.check-version.outputs.version) }}
           name: ${{ steps.commit-info.outputs.message_raw }}
-          body: ${{ steps.commit-info.outputs.description_raw }}
+          body: ${{ steps.release-notes.outputs.notes }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

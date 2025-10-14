@@ -24,10 +24,12 @@ pub fn apply_config_changes(
 
   if let Ok(mut window) = window_query.get_single_mut() {
     window.resolution = WindowResolution::new(config.frame_width, config.frame_height);
+    window.title = config.window_title.clone();
     info!(
       "📐 Window size updated to: {}x{}",
       config.frame_width, config.frame_height
     );
+    info!("📝 Window title updated to: {}", config.window_title);
   }
 
   #[cfg(windows)]

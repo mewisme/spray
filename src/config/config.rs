@@ -10,6 +10,7 @@ pub struct ArisuConfig {
   pub frame_digits: u32,
   pub frame_width: f32,
   pub frame_height: f32,
+  pub window_title: String,
 }
 
 impl Default for ArisuConfig {
@@ -20,6 +21,7 @@ impl Default for ArisuConfig {
       frame_digits: 4,
       frame_width: 128.0,
       frame_height: 128.0,
+      window_title: "Arisu".to_string(),
     }
   }
 }

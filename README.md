@@ -59,27 +59,26 @@ Download the latest `Arisu.exe` from [Releases](https://github.com/mewisme/arisu
 ```
 arisu/
 ├── assets/
-│   └── frames/                # Animation frames (620 PNG files, embedded)
-├── src/
-│   ├── main.rs               # Entry point
-│   ├── animation/            # Animation system
-│   │   ├── mod.rs
-│   │   └── anim.rs          # Frame animation logic
-│   ├── config/               # Configuration management
-│   │   ├── mod.rs
-│   │   ├── config.rs        # Config load/save
-│   │   ├── config_watcher.rs # Hot reload watcher
-│   │   └── config_applier.rs # Apply config changes
-│   ├── window/               # Window management
-│   │   ├── mod.rs
-│   │   ├── drag.rs          # Window dragging
-│   │   └── state.rs         # Application state
-│   └── platform/             # Platform-specific (Windows)
-│       ├── mod.rs
-│       ├── system.rs        # System integration
-│       └── taskbar.rs       # Taskbar detection
-└── res/
-    └── icon.ico              # Application icon
+│   ├── frames/                # Animation frames (620 PNG files, embedded)
+│   └── icon.ico              # Application icon
+└── src/
+    ├── main.rs               # Entry point
+    ├── animation/            # Animation system
+    │   ├── mod.rs
+    │   └── anim.rs          # Frame animation logic
+    ├── config/               # Configuration management
+    │   ├── mod.rs
+    │   ├── config.rs        # Config load/save
+    │   ├── config_watcher.rs # Hot reload watcher
+    │   └── config_applier.rs # Apply config changes
+    ├── window/               # Window management
+    │   ├── mod.rs
+    │   ├── drag.rs          # Window dragging
+    │   └── state.rs         # Application state
+    └── platform/             # Platform-specific (Windows)
+        ├── mod.rs
+        ├── system.rs        # System integration
+        └── taskbar.rs       # Taskbar detection
 ```
 
 ## Technologies

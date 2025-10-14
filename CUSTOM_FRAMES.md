@@ -93,7 +93,8 @@ File `arisu.config.json` sẽ được tạo tự động khi chạy lần đầ
   "auto_startup": false,
   "frame_digits": 4,
   "frame_width": 128.0,
-  "frame_height": 128.0
+  "frame_height": 128.0,
+  "window_title": "Arisu"
 }
 ```
 
@@ -131,6 +132,15 @@ Bạn có thể thay đổi để làm animation to/nhỏ hơn:
 - `frame_width: 64.0, frame_height: 64.0` = Animation nhỏ hơn một nửa
 
 **Lưu ý:** Kích thước này quyết định cả kích thước cửa sổ!
+
+#### Window Title
+
+Tên hiển thị của cửa sổ:
+- `window_title: "Arisu"` = Hiển thị "Arisu" (mặc định)
+- `window_title: "My Pet"` = Hiển thị "My Pet"
+- `window_title: "🐱 Neko"` = Có thể dùng emoji
+
+**Lưu ý:** Title có thể thay đổi ngay khi save config (hot reload)!
 
 #### Hot Reload
 
@@ -193,7 +203,8 @@ ffmpeg -i mypet.mp4 -vf "fps=10,scale=128:128" frames/frame_%04d.png
   "auto_startup": false,
   "frame_digits": 4,
   "frame_width": 128.0,
-  "frame_height": 128.0
+  "frame_height": 128.0,
+  "window_title": "My Pet"
 }
 ```
 
@@ -218,7 +229,8 @@ arisu.config.json:
   "auto_startup": false,
   "frame_digits": 4,
   "frame_width": 128.0,
-  "frame_height": 128.0
+  "frame_height": 128.0,
+  "window_title": "Slow Animation"
 }
 ```
 → 3 frames, 2 FPS = mỗi frame hiển thị 500ms, kích thước 128x128
@@ -234,7 +246,8 @@ arisu.config.json:
   "auto_startup": true,
   "frame_digits": 4,
   "frame_width": 128.0,
-  "frame_height": 128.0
+  "frame_height": 128.0,
+  "window_title": "Arisu"
 }
 ```
 → 100 frames, 30 FPS = mỗi frame hiển thị ~33ms, tự động chạy khi khởi động Windows
@@ -250,12 +263,13 @@ arisu.config.json:
   "auto_startup": false,
   "frame_digits": 5,
   "frame_width": 128.0,
-  "frame_height": 128.0
+  "frame_height": 128.0,
+  "window_title": "Movie Pet"
 }
 ```
 → 15000 frames, 24 FPS, sử dụng 5 chữ số cho tên file
 
-### Ví dụ 4: Animation kích thước lớn
+### Ví dụ 4: Animation kích thước lớn với emoji
 ```
 assets/frames/
   ├── frame_0001.png ... frame_0060.png (mỗi file 256x256)
@@ -266,7 +280,8 @@ arisu.config.json:
   "auto_startup": false,
   "frame_digits": 4,
   "frame_width": 256.0,
-  "frame_height": 256.0
+  "frame_height": 256.0,
+  "window_title": "🐱 Neko Chan"
 }
 ```
 → 60 frames, 12 FPS, hiển thị ở kích thước 256x256 (to gấp đôi mặc định)
