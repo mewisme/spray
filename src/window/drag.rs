@@ -1,4 +1,4 @@
-use crate::state::AnimControl;
+use crate::window::AnimControl;
 use bevy::prelude::*;
 use bevy::window::{PrimaryWindow, WindowPosition};
 

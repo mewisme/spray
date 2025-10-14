@@ -4,19 +4,31 @@
 use bevy::prelude::*;
 use bevy::window::{WindowLevel, WindowPosition};
 use bevy_embedded_assets::EmbeddedAssetPlugin;
+use std::env;
 
-mod anim;
-mod drag;
-mod state;
-mod system;
-mod taskbar;
+mod animation;
+mod config;
+mod platform;
+mod window;
 
-use anim::{animate_frames, setup_animation};
-use drag::drag_move_window;
-use state::{keep_always_on_top, AnimControl};
-use system::snap_to_taskbar_on_startup;
+use animation::{animate_frames, setup_animation};
+use config::{
+  apply_config_changes, load_or_create_config, setup_config_watcher, watch_config_changes,
+};
+use platform::snap_to_taskbar_on_startup;
+use window::{drag_move_window, keep_always_on_top, AnimControl};
 
 fn main() {
+  if let Ok(exe_path) = env::current_exe() {
+    if let Some(exe_dir) = exe_path.parent() {
+      let _ = env::set_current_dir(exe_dir);
+    }
+  }
+
+  let config = load_or_create_config();
+  let window_width = config.frame_width;
+  let window_height = config.frame_height;
+
   App::new()
     .add_plugins(EmbeddedAssetPlugin::default())
     .insert_resource(ClearColor(Color::NONE))
@@ -29,15 +41,29 @@ fn main() {
         resizable: false,
         window_level: WindowLevel::AlwaysOnTop,
         position: WindowPosition::At(IVec2::new(800, 920)),
-        resolution: (128.0, 128.0).into(),
+        resolution: (window_width, window_height).into(),
         ..default()
       }),
       ..default()
     }))
-    .add_systems(Startup, (setup_animation, snap_to_taskbar_on_startup))
+    .add_systems(
+      Startup,
+      (
+        setup_config_watcher,
+        setup_animation,
+        snap_to_taskbar_on_startup,
+      )
+        .chain(),
+    )
     .add_systems(
       Update,
-      (animate_frames, drag_move_window, keep_always_on_top),
+      (
+        watch_config_changes,
+        apply_config_changes,
+        animate_frames,
+        drag_move_window,
+        keep_always_on_top,
+      ),
     )
     .run();
 }

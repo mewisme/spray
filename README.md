@@ -9,10 +9,27 @@ A cute desktop pet animation powered by Bevy, featuring smooth frame-based anima
 - 📌 Auto snap to taskbar on startup
 - 🪟 Always on top, transparent window
 - 💾 Embedded assets - all frames bundled in the executable
+- 🎨 **Customizable frames and FPS** - use your own animations!
+- 🔄 **Hot reload config** - changes apply instantly without restart!
 
 ## Usage
 
 Simply run the executable. The animation will appear above your taskbar. Click and drag to move it to any position on your screen.
+
+### Customization
+
+You can customize the animation frames and FPS:
+
+1. **Custom Frames**: Create a folder `assets/frames/` next to the executable and put your PNG frames there (named `frame_0001.png`, `frame_0002.png`, etc.)
+2. **Custom FPS**: Edit `arisu.config.json` (auto-created) to adjust the animation speed
+
+See [CUSTOM_FRAMES.md](CUSTOM_FRAMES.md) for detailed instructions.
+
+**Default behavior:**
+- Builtin: 620 frames (embedded), FPS/size from config
+- Custom: Auto-detect frame count, all settings from config
+
+**Note:** All config settings (FPS, window size) apply to both builtin and custom modes!
 
 ## Installation
 
@@ -42,16 +59,27 @@ Download the latest `Arisu.exe` from [Releases](https://github.com/mewisme/arisu
 ```
 arisu/
 ├── assets/
-│   └── frames/          # Animation frames (640 PNG files)
+│   └── frames/                # Animation frames (620 PNG files, embedded)
 ├── src/
-│   ├── main.rs         # Entry point
-│   ├── anim.rs         # Animation system
-│   ├── drag.rs         # Window dragging
-│   ├── state.rs        # Application state
-│   ├── system.rs       # System integration
-│   └── taskbar.rs      # Taskbar detection (Windows)
+│   ├── main.rs               # Entry point
+│   ├── animation/            # Animation system
+│   │   ├── mod.rs
+│   │   └── anim.rs          # Frame animation logic
+│   ├── config/               # Configuration management
+│   │   ├── mod.rs
+│   │   ├── config.rs        # Config load/save
+│   │   ├── config_watcher.rs # Hot reload watcher
+│   │   └── config_applier.rs # Apply config changes
+│   ├── window/               # Window management
+│   │   ├── mod.rs
+│   │   ├── drag.rs          # Window dragging
+│   │   └── state.rs         # Application state
+│   └── platform/             # Platform-specific (Windows)
+│       ├── mod.rs
+│       ├── system.rs        # System integration
+│       └── taskbar.rs       # Taskbar detection
 └── res/
-    └── icon.ico        # Application icon
+    └── icon.ico              # Application icon
 ```
 
 ## Technologies
