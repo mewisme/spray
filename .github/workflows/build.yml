@@ -323,6 +323,7 @@ jobs:
           ## 📦 Files Included
 
           - **Arisu.exe** - Main executable (release build)
+          - **Arisu.exe-debug** - Debug executable (for troubleshooting)
           - **arisu.config.example.json** - Example configuration file
           - **README.md** - Full documentation
           - **CUSTOM_FRAMES.md** - Guide for custom animations
@@ -334,6 +335,7 @@ jobs:
           1. Download `Arisu.exe`
           2. Run it - the app will appear above your taskbar
           3. Drag to move, edit `arisu.config.json` to customize
+          4. Edit config to change FPS, window size, etc.
 
           ## ⚠️ Troubleshooting
 
@@ -342,10 +344,16 @@ jobs:
           2. Right-click → Properties → Unblock
           3. Try running as administrator
           4. See **TROUBLESHOOTING.md** for detailed fixes
-          5. Download the `-debug` artifact for error messages
+          5. Download the `Arisu.exe-debug` artifact for error messages
 
           **Requirements:**
           - Windows 10/11 (64-bit)
+          - DirectX 11 compatible GPU
+          - 100MB RAM
+          - 100MB disk space
+          - Windows 11 recommended
+          - Dedicated GPU recommended
+          - 200MB RAM recommended
           - No additional runtime needed
 
           ## 🔗 Links
@@ -365,6 +373,7 @@ jobs:
         with:
           files: |
             Arisu-windows-x86_64/Arisu.exe
+            Arisu-windows-x86_64-debug/Arisu.exe
             release-package/arisu.config.example.json
             release-package/README.md
             release-package/CUSTOM_FRAMES.md
