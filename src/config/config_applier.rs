@@ -8,6 +8,7 @@ pub fn apply_config_changes(
   mut config_res: ResMut<ConfigResource>,
   mut anim_query: Query<&mut FrameAnimation>,
   mut window_query: Query<&mut Window, With<PrimaryWindow>>,
+  mut sprite_query: Query<&mut Transform, (With<Sprite>, Without<Camera>)>,
 ) {
   if !config_res.changed {
     return;
@@ -30,6 +31,12 @@ pub fn apply_config_changes(
       config.frame_width, config.frame_height
     );
     info!("📝 Window title updated to: {}", config.window_title);
+  }
+
+  let scale = config.scale_percent / 100.0;
+  for mut transform in sprite_query.iter_mut() {
+    transform.scale = Vec3::splat(scale);
+    info!("🔍 Scale updated to: {}%", config.scale_percent);
   }
 
   #[cfg(windows)]

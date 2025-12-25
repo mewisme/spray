@@ -4,7 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct ArisuConfig {
+pub struct SprayConfig {
   pub fps: u32,
   pub auto_startup: bool,
   pub frame_digits: u32,
@@ -13,10 +13,12 @@ pub struct ArisuConfig {
   pub window_title: String,
   #[serde(default = "default_frame_folder")]
   pub frame_folder: String,
-  #[serde(default)]
+  #[serde(default = "default_gif_path")]
   pub gif_path: Option<String>,
   #[serde(default = "default_mode")]
   pub mode: String,
+  #[serde(default = "default_scale_percent")]
+  pub scale_percent: f32,
 }
 
 fn default_frame_folder() -> String {
@@ -27,18 +29,27 @@ fn default_mode() -> String {
   "auto".to_string()
 }
 
-impl Default for ArisuConfig {
+fn default_scale_percent() -> f32 {
+  40.0
+}
+
+fn default_gif_path() -> Option<String> {
+  Some("evernight.gif".to_string())
+}
+
+impl Default for SprayConfig {
   fn default() -> Self {
     Self {
-      fps: 5,
+      fps: 12,
       auto_startup: false,
       frame_digits: 4,
-      frame_width: 128.0,
-      frame_height: 128.0,
-      window_title: "Arisu".to_string(),
+      frame_width: 200.0,
+      frame_height: 250.0,
+      window_title: "Spray".to_string(),
       frame_folder: "frames".to_string(),
-      gif_path: None,
+      gif_path: Some("evernight.gif".to_string()),
       mode: "auto".to_string(),
+      scale_percent: 40.0,
     }
   }
 }
@@ -46,16 +57,16 @@ impl Default for ArisuConfig {
 fn get_config_path() -> Option<PathBuf> {
   if let Ok(exe_path) = env::current_exe() {
     if let Some(exe_dir) = exe_path.parent() {
-      return Some(exe_dir.join("arisu.config.json"));
+      return Some(exe_dir.join("spray.config.json"));
     }
   }
   None
 }
 
-pub fn load_or_create_config() -> ArisuConfig {
+pub fn load_or_create_config() -> SprayConfig {
   if let Some(config_path) = get_config_path() {
     if let Ok(content) = fs::read_to_string(&config_path) {
-      if let Ok(config) = serde_json::from_str::<ArisuConfig>(&content) {
+      if let Ok(config) = serde_json::from_str::<SprayConfig>(&content) {
         println!("✅ Config loaded from: {:?}", config_path);
 
         #[cfg(windows)]
@@ -67,7 +78,7 @@ pub fn load_or_create_config() -> ArisuConfig {
       }
     }
 
-    let config = ArisuConfig::default();
+    let config = SprayConfig::default();
     if let Ok(json) = serde_json::to_string_pretty(&config) {
       if fs::write(&config_path, json).is_ok() {
         println!("📝 Config created at: {:?}", config_path);
@@ -76,11 +87,11 @@ pub fn load_or_create_config() -> ArisuConfig {
     return config;
   }
 
-  ArisuConfig::default()
+  SprayConfig::default()
 }
 
 #[cfg(windows)]
-pub fn apply_startup_setting(config: &ArisuConfig) {
+pub fn apply_startup_setting(config: &SprayConfig) {
   let startup_enabled = is_startup_enabled();
   if config.auto_startup != startup_enabled {
     if config.auto_startup {
@@ -117,7 +128,7 @@ fn is_startup_enabled() -> bool {
 
       let result = RegQueryValueExW(
         key,
-        w!("Arisu"),
+        w!("Spray"),
         None,
         None,
         Some(buffer.as_mut_ptr() as *mut u8),
@@ -155,7 +166,7 @@ fn enable_startup() -> bool {
         )
         .is_ok()
         {
-          let result = RegSetValueExW(key, w!("Arisu"), 0, REG_SZ, Some(bytes));
+          let result = RegSetValueExW(key, w!("Spray"), 0, REG_SZ, Some(bytes));
 
           let _ = RegCloseKey(key);
           return result.is_ok();
@@ -182,7 +193,7 @@ fn disable_startup() {
     )
     .is_ok()
     {
-      let _ = RegDeleteValueW(key, w!("Arisu"));
+      let _ = RegDeleteValueW(key, w!("Spray"));
       let _ = RegCloseKey(key);
     }
   }

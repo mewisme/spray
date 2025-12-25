@@ -31,7 +31,7 @@ struct FrameInfo {
 
 fn check_external_frames() -> Option<FrameInfo> {
   let config = load_or_create_config();
-  
+
   if let Ok(exe_path) = env::current_exe() {
     if let Some(exe_dir) = exe_path.parent() {
       let assets_path = exe_dir.join("assets").join(&config.frame_folder);
@@ -68,15 +68,14 @@ fn check_external_frames() -> Option<FrameInfo> {
 
 fn check_gif_file() -> Option<PathBuf> {
   let config = load_or_create_config();
-  
+
   if let Ok(exe_path) = env::current_exe() {
     if let Some(exe_dir) = exe_path.parent() {
       let assets_dir = exe_dir.join("assets");
-      
-      // Use gif_path from config, or default to "anim.gif"
-      let gif_file_name = config.gif_path.as_deref().unwrap_or("anim.gif");
+
+      let gif_file_name = config.gif_path.as_deref().unwrap_or("evernight.gif");
       let gif_path = assets_dir.join(gif_file_name);
-      
+
       if gif_path.exists() && gif_path.is_file() {
         return Some(gif_path);
       }
@@ -85,21 +84,92 @@ fn check_gif_file() -> Option<PathBuf> {
   None
 }
 
+fn decode_embedded_gif_from_bytes(gif_bytes: &[u8]) -> Option<Vec<Image>> {
+  use image::AnimationDecoder;
+  use std::io::Cursor;
+
+  if gif_bytes.is_empty() {
+    error!("❌ GIF bytes are empty!");
+    return None;
+  }
+
+  let cursor = Cursor::new(gif_bytes);
+  let decoder = match image::codecs::gif::GifDecoder::new(cursor) {
+    Ok(d) => d,
+    Err(e) => {
+      error!("❌ Failed to create GIF decoder: {:?}", e);
+      return None;
+    }
+  };
+
+  let gif_frames = match decoder.into_frames().collect_frames() {
+    Ok(frames) => frames,
+    Err(e) => {
+      error!("❌ Failed to collect GIF frames: {:?}", e);
+      return None;
+    }
+  };
+
+  let mut images = Vec::new();
+
+  for frame in gif_frames {
+    let rgba_frame = frame.into_buffer();
+    let (width, height) = rgba_frame.dimensions();
+    let raw_data = rgba_frame.into_raw();
+
+    let image = Image::new(
+      Extent3d {
+        width,
+        height,
+        depth_or_array_layers: 1,
+      },
+      TextureDimension::D2,
+      raw_data,
+      TextureFormat::Rgba8UnormSrgb,
+      bevy::render::render_asset::RenderAssetUsages::RENDER_WORLD,
+    );
+
+    images.push(image);
+  }
+
+  if images.is_empty() {
+    error!("❌ No images decoded from GIF!");
+    return None;
+  }
+
+  Some(images)
+}
+
+fn decode_embedded_gif(_asset_server: &AssetServer) -> Option<Vec<Image>> {
+  const GIF_BYTES: &[u8] = include_bytes!("../../assets/evernight.gif");
+
+  if !GIF_BYTES.is_empty() {
+    info!(
+      "📦 Loading embedded GIF using include_bytes! (size: {} bytes)",
+      GIF_BYTES.len()
+    );
+    return decode_embedded_gif_from_bytes(GIF_BYTES);
+  }
+
+  warn!("❌ Embedded GIF bytes are empty!");
+  None
+}
+
 fn decode_gif_to_images(gif_path: &PathBuf) -> Option<Vec<Image>> {
   use image::AnimationDecoder;
   use std::io::BufReader;
-  
+
   if let Ok(file) = fs::File::open(gif_path) {
     let reader = BufReader::new(file);
     if let Ok(decoder) = image::codecs::gif::GifDecoder::new(reader) {
       if let Ok(gif_frames) = decoder.into_frames().collect_frames() {
         let mut images = Vec::new();
-        
+
         for frame in gif_frames {
           let rgba_frame = frame.into_buffer();
           let (width, height) = rgba_frame.dimensions();
           let raw_data = rgba_frame.into_raw();
-          
+
           let image = Image::new(
             Extent3d {
               width,
@@ -111,10 +181,10 @@ fn decode_gif_to_images(gif_path: &PathBuf) -> Option<Vec<Image>> {
             TextureFormat::Rgba8UnormSrgb,
             bevy::render::render_asset::RenderAssetUsages::RENDER_WORLD,
           );
-          
+
           images.push(image);
         }
-        
+
         if !images.is_empty() {
           return Some(images);
         }
@@ -134,19 +204,48 @@ pub fn setup_animation(
   let mut frames = Vec::new();
   let config = load_or_create_config();
   let mode = config.mode.to_lowercase();
-  
-  // Initialize with default values from config
-  let mut fps = config.fps;
-  let mut frame_count = 620;
 
-  // Check mode: "frame" -> only frames, "gif" -> only gif, "auto" -> auto-detect
+  let mut fps = config.fps;
+  let mut frame_count = 0;
+
   let should_load_frames = mode == "frame" || mode == "auto";
   let should_load_gif = mode == "gif" || mode == "auto";
 
-  // Priority based on mode: PNG frames > GIF > embedded frames
   let mut loaded = false;
+  if should_load_gif {
+    if let Some(gif_path) = check_gif_file() {
+      info!("🎬 Loading GIF animation from: {:?}", gif_path);
 
-  if should_load_frames {
+      if let Some(gif_images) = decode_gif_to_images(&gif_path) {
+        fps = config.fps;
+        frame_count = gif_images.len();
+
+        info!("✅ Decoded {} frames from GIF", frame_count);
+        info!("⚙️ FPS from config: {}", fps);
+
+        for image in gif_images.into_iter() {
+          let handle = images.add(image);
+          frames.push(handle);
+        }
+
+        info!(
+          "📐 Frame size: {}x{}",
+          config.frame_width, config.frame_height
+        );
+
+        loaded = true;
+      } else {
+        if mode == "gif" {
+          panic!("❌ GIF mode specified but failed to decode GIF file!");
+        }
+        warn!("❌ Failed to decode GIF, trying frames...");
+      }
+    } else if mode == "gif" {
+      panic!("❌ GIF mode specified but no GIF file found!");
+    }
+  }
+
+  if !loaded && should_load_frames {
     if let Some(frame_info) = check_external_frames() {
       info!(
         "✨ Loading {} custom frames from: {:?}",
@@ -170,60 +269,63 @@ pub fn setup_animation(
       }
       loaded = true;
     } else if mode == "frame" {
-      panic!("❌ Frame mode specified but no frames found in assets/{}/!", config.frame_folder);
-    }
-  }
-
-  if !loaded && should_load_gif {
-    if let Some(gif_path) = check_gif_file() {
-      info!("🎬 Loading GIF animation from: {:?}", gif_path);
-      
-      if let Some(gif_images) = decode_gif_to_images(&gif_path) {
-        fps = config.fps;
-        frame_count = gif_images.len();
-        
-        info!("✅ Decoded {} frames from GIF", frame_count);
-        info!("⚙️ FPS from config: {}", fps);
-        
-        // Create Image assets from decoded frames
-        for image in gif_images.into_iter() {
-          let handle = images.add(image);
-          frames.push(handle);
-        }
-        
-        info!("📐 Frame size: {}x{}", config.frame_width, config.frame_height);
-        loaded = true;
-      } else {
-        if mode == "gif" {
-          panic!("❌ GIF mode specified but failed to decode GIF file!");
-        }
-        warn!("❌ Failed to decode GIF, falling back to embedded frames");
-      }
-    } else if mode == "gif" {
-      panic!("❌ GIF mode specified but no GIF file found!");
+      panic!(
+        "❌ Frame mode specified but no frames found in assets/{}/!",
+        config.frame_folder
+      );
     }
   }
 
   if !loaded {
-    // Fall back to embedded frames
-    info!("📦 Loading embedded frames");
+    info!("📦 Loading embedded GIF (evernight.gif) from binary");
 
-    fps = config.fps;
-    frame_count = 620;
+    match decode_embedded_gif(&asset_server) {
+      Some(gif_images) => {
+        fps = config.fps;
+        frame_count = gif_images.len();
 
-    info!("⚙️ FPS from config: {}", fps);
-    info!(
-      "📐 Frame size: {}x{}",
-      config.frame_width, config.frame_height
-    );
+        info!("✅ Decoded {} frames from embedded GIF", frame_count);
+        info!("⚙️ FPS from config: {}", fps);
 
-    for i in 1..=frame_count {
-      let path = format!("embedded://frames/frame_{:04}.png", i);
-      frames.push(asset_server.load::<Image>(path));
+        for image in gif_images.into_iter() {
+          let handle = images.add(image);
+          frames.push(handle);
+        }
+
+        info!(
+          "📐 Frame size: {}x{}",
+          config.frame_width, config.frame_height
+        );
+        loaded = true;
+      }
+      None => {
+        warn!("❌ Failed to decode embedded GIF, trying embedded frames as last resort");
+      }
+    }
+
+    if !loaded {
+      info!("📦 Loading embedded frames as fallback");
+      fps = config.fps;
+      frame_count = 620;
+
+      info!("⚙️ FPS from config: {}", fps);
+      info!(
+        "📐 Frame size: {}x{}",
+        config.frame_width, config.frame_height
+      );
+
+      for i in 1..=frame_count {
+        let path = format!("embedded://frames/frame_{:04}.png", i);
+        frames.push(asset_server.load::<Image>(path));
+      }
+      info!("✅ Loaded {} embedded frames", frame_count);
     }
   }
 
-  assert!(!frames.is_empty(), "❌ No frames found!");
+  if frames.is_empty() {
+    error!("❌ No frames found! Check logs above for details.");
+    panic!("❌ No frames found! Please check your assets folder or embedded assets.");
+  }
 
   let frame_duration = Duration::from_millis(1000 / fps as u64);
   info!(
@@ -231,10 +333,11 @@ pub fn setup_animation(
     frame_count, fps, frame_duration
   );
 
+  let scale = config.scale_percent / 100.0;
   commands.spawn((
     SpriteBundle {
       texture: frames[0].clone(),
-      transform: Transform::from_scale(Vec3::splat(1.0)),
+      transform: Transform::from_scale(Vec3::splat(scale)),
       ..default()
     },
     FrameAnimation {

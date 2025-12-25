@@ -79,8 +79,8 @@ jobs:
         include:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: Arisu-windows-x86_64
-            binary_path: target/x86_64-pc-windows-msvc/release/Arisu.exe
+            artifact_name: Spray-windows-x86_64
+            binary_path: target/x86_64-pc-windows-msvc/release/Spray.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -95,20 +95,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-lfs-
 
-      - name: Verify LFS files
+      - name: Verify assets
         run: |
-          echo "Checking LFS files..."
+          echo "Checking assets..."
           git lfs ls-files
+
+          if [ -f "assets/evernight.gif" ]; then
+            echo "✅ Found evernight.gif (embedded default)"
+            GIF_SIZE=$(du -h assets/evernight.gif | cut -f1)
+            echo "GIF size: $GIF_SIZE"
+          else
+            echo "⚠️ Warning: evernight.gif not found (will use embedded version from source)"
+          fi
+
           if [ -d "assets/frames" ]; then
             FRAME_COUNT=$(ls -1 assets/frames/*.png 2>/dev/null | wc -l)
-            echo "Found $FRAME_COUNT frame files"
-            if [ "$FRAME_COUNT" -lt 620 ]; then
-              echo "Error: Expected 620 frames, found $FRAME_COUNT"
-              exit 1
-            fi
+            echo "Found $FRAME_COUNT frame files (optional, for fallback)"
           else
-            echo "Error: assets/frames directory not found"
-            exit 1
+            echo "ℹ️ assets/frames directory not found (optional, embedded GIF will be used)"
           fi
         shell: bash
 
@@ -242,43 +246,44 @@ jobs:
 
       - name: Prepare release files
         run: |
-          ls -la Arisu-windows-x86_64/
+          ls -la Spray-windows-x86_64/
         shell: bash
 
       - name: Create release package
         run: |
           mkdir -p release-package
-          cp Arisu-windows-x86_64/Arisu.exe release-package/
+          cp Spray-windows-x86_64/Spray.exe release-package/
           cp README.md release-package/
           cp CUSTOM_FRAMES.md release-package/
 
           # Create example config
-          cat > release-package/arisu.config.json << 'EOF'
+          cat > release-package/spray.config.json << 'EOF'
           {
-            "fps": 5,
+            "fps": 12,
             "auto_startup": false,
             "frame_digits": 4,
-            "frame_width": 128.0,
-            "frame_height": 128.0,
-            "window_title": "Arisu",
+            "frame_width": 200.0,
+            "frame_height": 250.0,
+            "window_title": "Spray",
             "frame_folder": "frames",
-            "gif_path": null,
-            "mode": "auto"
+            "gif_path": "evernight.gif",
+            "mode": "auto",
+            "scale_percent": 40.0
           }
           EOF
 
           # Create quick start guide
           cat > release-package/QUICKSTART.txt << 'EOF'
-          Arisu Desktop Pet - Quick Start Guide
+          Spray Desktop Pet - Quick Start Guide
           =====================================
 
-          1. Run Arisu.exe - the app will appear above your taskbar
+          1. Run Spray.exe - the app will appear above your taskbar
           2. Drag it anywhere on screen
-          3. Edit arisu.config.json to customize (auto-created on first run)
+          3. Edit spray.config.json to customize (auto-created on first run)
 
           For custom animations:
-          - Create folder: assets/frames/
-          - Put your PNG frames: frame_0001.png, frame_0002.png, etc.
+          - Place GIF file: assets/evernight.gif (or any .gif, set gif_path in config)
+          - Or create folder: assets/frames/ with PNG frames: frame_0001.png, frame_0002.png, etc.
           - See CUSTOM_FRAMES.md for details
 
           Requirements:
@@ -289,7 +294,7 @@ jobs:
           - Check Windows Defender/Antivirus
           - Try running as administrator
 
-          More info: https://github.com/mewisme/arisu
+          More info: https://github.com/mewisme/spray
           EOF
 
           ls -la release-package/
@@ -305,18 +310,18 @@ jobs:
 
           ## 📦 Files Included
 
-          - **Arisu.exe** - Main executable (release build, optimized)
-          - **arisu.config.json** - Example configuration file
+          - **Spray.exe** - Main executable (release build, optimized)
+          - **spray.config.json** - Example configuration file
           - **README.md** - Full documentation
           - **CUSTOM_FRAMES.md** - Guide for custom animations
           - **QUICKSTART.txt** - Quick start guide
 
           ## 🚀 Quick Start
 
-          1. Download `Arisu.exe`
-          2. Run it - the app will appear above your taskbar
-          3. Drag to move, edit `arisu.config.json` to customize
-          4. Edit config to change FPS, window size, etc.
+          1. Download `Spray.exe`
+          2. Run it - the app will appear above your taskbar with embedded animation
+          3. Drag to move, edit `spray.config.json` to customize
+          4. Edit config to change FPS, window size, scale, etc.
 
           ## ⚠️ Troubleshooting
 
@@ -351,8 +356,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            Arisu-windows-x86_64/Arisu.exe
-            release-package/arisu.config.json
+            Spray-windows-x86_64/Spray.exe
+            release-package/spray.config.json
             release-package/README.md
             release-package/CUSTOM_FRAMES.md
             release-package/QUICKSTART.txt

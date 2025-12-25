@@ -4,11 +4,11 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
-use crate::config::{load_or_create_config, ArisuConfig};
+use crate::config::{load_or_create_config, SprayConfig};
 
 #[derive(Resource)]
 pub struct ConfigResource {
-  pub config: ArisuConfig,
+  pub config: SprayConfig,
   pub changed: bool,
   pub last_modified: Option<SystemTime>,
 }
@@ -51,7 +51,7 @@ pub fn watch_config_changes(mut config_res: ResMut<ConfigResource>) {
 fn get_config_path() -> Option<PathBuf> {
   if let Ok(exe_path) = env::current_exe() {
     if let Some(exe_dir) = exe_path.parent() {
-      return Some(exe_dir.join("arisu.config.json"));
+      return Some(exe_dir.join("spray.config.json"));
     }
   }
   None

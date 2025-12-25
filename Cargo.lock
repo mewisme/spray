@@ -176,19 +176,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "arisu"
-version = "0.0.7"
-dependencies = [
- "bevy",
- "bevy_embedded_assets",
- "image",
- "serde",
- "serde_json",
- "windows 0.52.0",
- "winres",
-]
-
-[[package]]
 name = "arrayref"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3189,6 +3176,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eda41003dc44290527a59b13432d4a0379379fa074b70174882adfbdfd917844"
 dependencies = [
  "bitflags 2.9.4",
+]
+
+[[package]]
+name = "spray"
+version = "0.0.8"
+dependencies = [
+ "bevy",
+ "bevy_embedded_assets",
+ "image",
+ "serde",
+ "serde_json",
+ "windows 0.52.0",
+ "winres",
 ]
 
 [[package]]

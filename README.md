@@ -1,4 +1,4 @@
-# Arisu
+# Spray
 
 A cute desktop pet animation powered by Bevy, featuring smooth frame-based animations that runs on your desktop.
 
@@ -8,9 +8,10 @@ A cute desktop pet animation powered by Bevy, featuring smooth frame-based anima
 - 🖱️ Draggable window - click and drag to move anywhere on screen
 - 📌 Auto snap to taskbar on startup
 - 🪟 Always on top, transparent window
-- 💾 Embedded assets - all frames bundled in the executable
-- 🎨 **Customizable frames and FPS** - use your own animations!
+- 💾 Embedded assets - default GIF animation bundled in the executable
+- 🎨 **Customizable frames, GIF, FPS, and scale** - use your own animations!
 - 🔄 **Hot reload config** - changes apply instantly without restart!
+- 🎯 **Scale control** - adjust animation size with `scale_percent` config
 
 ## Usage
 
@@ -20,16 +21,17 @@ Simply run the executable. The animation will appear above your taskbar. Click a
 
 You can customize the animation frames and FPS:
 
-1. **Custom Frames**: Create a folder `assets/frames/` next to the executable and put your PNG frames there (named `frame_0001.png`, `frame_0002.png`, etc.)
-2. **Custom FPS**: Edit `arisu.config.json` (auto-created) to adjust the animation speed
+1. **Custom GIF**: Place a GIF file in `assets/` folder (default: `evernight.gif`)
+2. **Custom Frames**: Create a folder `assets/frames/` and put PNG frames there (named `frame_0001.png`, `frame_0002.png`, etc.)
+3. **Custom FPS**: Edit `spray.config.json` (auto-created) to adjust the animation speed
+4. **Scale**: Adjust animation size with `scale_percent` (default: 40.0 = 40%)
 
 See [CUSTOM_FRAMES.md](CUSTOM_FRAMES.md) for detailed instructions.
 
 **Default behavior:**
-- Builtin: 620 frames (embedded), FPS/size from config
-- Custom: Auto-detect frame count, all settings from config
-
-**Note:** All config settings (FPS, window size) apply to both builtin and custom modes!
+- Priority order: External GIF → External Frames → Embedded GIF (evernight.gif) → Embedded frames
+- Default: Embedded GIF (evernight.gif) with config: fps=12, size=200x250, scale=40%
+- All settings (FPS, window size, scale) are configurable via `spray.config.json`
 
 ## Installation
 
@@ -38,16 +40,16 @@ See [CUSTOM_FRAMES.md](CUSTOM_FRAMES.md) for detailed instructions.
 Requires Rust toolchain (1.70+):
 
 ```bash
-git clone https://github.com/mewisme/arisu.git
-cd arisu
+git clone https://github.com/mewisme/spray.git
+cd spray
 cargo build --release
 ```
 
-The compiled executable will be in `target/release/Arisu.exe`
+The compiled executable will be in `target/release/Spray.exe`
 
 ### From Release
 
-Download the latest `Arisu.exe` from [Releases](https://github.com/mewisme/arisu/releases) and run it.
+Download the latest `Spray.exe` from [Releases](https://github.com/mewisme/spray/releases) and run it.
 
 ## Requirements
 
@@ -57,9 +59,10 @@ Download the latest `Arisu.exe` from [Releases](https://github.com/mewisme/arisu
 ## Project Structure
 
 ```
-arisu/
+spray/
 ├── assets/
-│   ├── frames/                # Animation frames (620 PNG files, embedded)
+│   ├── evernight.gif         # Default embedded GIF animation
+│   ├── frames/               # Optional: Custom PNG frames
 │   └── icon.ico              # Application icon
 └── src/
     ├── main.rs               # Entry point

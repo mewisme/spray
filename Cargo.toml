@@ -1,16 +1,16 @@
 [package]
-name = "arisu"
-version = "0.0.7"
+name = "spray"
+version = "0.0.8"
 edition = "2021"
 build = "build.rs"
 authors = ["Mew <mauminh.nguyen@gmail.com>"]
 license = "MIT"
-repository = "https://github.com/mewisme/arisu"
-homepage = "https://github.com/mewisme/arisu"
+repository = "https://github.com/mewisme/spray"
+homepage = "https://github.com/mewisme/spray"
 keywords = ["bevy", "desktop", "animation"]
 
 [[bin]]
-name = "Arisu"
+name = "Spray"
 path = "src/main.rs"
 
 [dependencies]

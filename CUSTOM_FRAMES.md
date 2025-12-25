@@ -2,17 +2,18 @@
 
 ## Overview
 
-Arisu supports custom frames and FPS through external folders and config files.
+Spray supports custom frames and FPS through external folders and config files.
 
 ## How It Works
 
-Arisu supports 3 animation loading modes, controlled by the `mode` config:
+Spray supports 3 animation loading modes, controlled by the `mode` config:
 
 ### Auto Mode (Default: `mode: "auto"`)
 Automatically finds animation in priority order:
-1. **PNG Frames** - Load from folder `assets/{frame_folder}/` (default: `assets/frames/`)
-2. **GIF** - Decode from GIF file at `assets/{gif_path}` (default: `assets/anim.gif`)
-3. **Embedded** - Use 620 frames embedded in the binary
+1. **External GIF** - Decode from GIF file at `assets/{gif_path}` (default: `assets/evernight.gif`)
+2. **PNG Frames** - Load from folder `assets/{frame_folder}/` (default: `assets/frames/`)
+3. **Embedded GIF** - Use `evernight.gif` embedded in the binary
+4. **Embedded Frames** - Fallback to 620 PNG frames embedded in the binary
 
 ### Frame Mode (`mode: "frame"`)
 Load only from PNG frames:
@@ -22,7 +23,7 @@ Load only from PNG frames:
 
 ### GIF Mode (`mode: "gif"`)
 Load only from GIF file:
-- Looks for GIF at `assets/{gif_path}` (or `assets/anim.gif` if `gif_path` is `null`)
+- Looks for GIF at `assets/{gif_path}` (or `assets/evernight.gif` if `gif_path` is `null`)
 - If not found or decode fails → app reports error and stops
 - Does not search for frames or embedded frames
 
@@ -37,11 +38,11 @@ There are 2 ways to customize animations:
 Simply place a GIF file in the `assets/` folder:
 
 ```
-📁 Folder containing Arisu
-├── Arisu.exe
-├── arisu.config.json          (auto-created)
+📁 Folder containing Spray
+├── Spray.exe
+├── spray.config.json          (auto-created)
 └── 📁 assets
-    └── animation.gif          (or anim.gif, frames.gif, pet.gif, or any .gif file)
+    └── evernight.gif          (or any .gif file, set gif_path in config)
 ```
 
 **Advantages:**
@@ -51,13 +52,13 @@ Simply place a GIF file in the `assets/` folder:
 
 **Example:**
 1. Download your favorite GIF animation
-2. Place it in the `assets/` folder next to `Arisu.exe`
-3. If the filename is `anim.gif`, no config needed (default)
+2. Place it in the `assets/` folder next to `Spray.exe`
+3. If the filename is `evernight.gif`, no config needed (default)
 4. If using a different filename, set `gif_path` in config (e.g., `"gif_path": "my_animation.gif"`)
-5. Run Arisu - the app will automatically decode and display the animation!
+5. Run Spray - the app will automatically decode and display the animation!
 
 **Note:**
-- Default behavior looks for `assets/anim.gif` if `gif_path` is `null`
+- Default behavior looks for `assets/evernight.gif` if `gif_path` is not set or is `null`
 - FPS from config will override the original GIF FPS. For example, if the GIF has 10 FPS but config sets `fps: 5`, animation will run at 5 FPS.
 
 ### Method 2: Using PNG Frames (More Flexible)
@@ -65,9 +66,9 @@ Simply place a GIF file in the `assets/` folder:
 Create a folder containing PNG frames (default is `assets/frames/`):
 
 ```
-📁 Folder containing Arisu
-├── Arisu.exe
-├── arisu.config.json          (auto-created)
+📁 Folder containing Spray
+├── Spray.exe
+├── spray.config.json          (auto-created)
 └── 📁 assets
     └── 📁 frames              (can be renamed in config: frame_folder)
         ├── frame_0001.png
@@ -123,7 +124,7 @@ ffmpeg -i video.mp4 -vf "fps=60,scale=128:128" frames/frame_%05d.png
 ffmpeg -i animation.gif -vf "fps=10,scale=128:128" frames/frame_%04d.png
 
 # Note: If you already have a GIF file, you can use it directly!
-# Just place the GIF file in assets/ and rename it to anim.gif
+# Just place the GIF file in assets/ and rename it to evernight.gif (or set gif_path in config)
 # No need to convert to PNG frames anymore!
 ```
 
@@ -140,19 +141,20 @@ ffmpeg -i animation.gif -vf "fps=10,scale=128:128" frames/frame_%04d.png
 
 ## Configuration
 
-The `arisu.config.json` file will be auto-created on first run:
+The `spray.config.json` file will be auto-created on first run:
 
 ```json
 {
-  "fps": 5,
+  "fps": 12,
   "auto_startup": false,
   "frame_digits": 4,
-  "frame_width": 128.0,
-  "frame_height": 128.0,
-  "window_title": "Arisu",
+  "frame_width": 200.0,
+  "frame_height": 250.0,
+  "window_title": "Spray",
   "frame_folder": "frames",
-  "gif_path": null,
-  "mode": "auto"
+  "gif_path": "evernight.gif",
+  "mode": "auto",
+  "scale_percent": 40.0
 }
 ```
 
@@ -161,10 +163,11 @@ The `arisu.config.json` file will be auto-created on first run:
 Controls how the app searches for frames/GIF:
 
 - `mode: "auto"` = Auto-detect (default)
-  - Priority: PNG frames → GIF → embedded frames
-  - If frames exist in `frame_folder` → use frames
-  - If no frames but GIF exists → use GIF
-  - If neither exists → use embedded frames
+  - Priority: External GIF → PNG frames → Embedded GIF → Embedded frames
+  - If external GIF exists → use external GIF
+  - If no external GIF but frames exist → use frames
+  - If neither exists → use embedded GIF (evernight.gif)
+  - Last resort → use embedded frames
 
 - `mode: "frame"` = Load only from PNG frames
   - Only searches for frames in `assets/{frame_folder}/`
@@ -172,7 +175,7 @@ Controls how the app searches for frames/GIF:
   - Does not search for GIF or embedded frames
 
 - `mode: "gif"` = Load only from GIF file
-  - Only searches for GIF at `assets/{gif_path}` (or `assets/anim.gif` if `gif_path` is `null`)
+  - Only searches for GIF at `assets/{gif_path}` (or `assets/evernight.gif` if `gif_path` is `null`)
   - If not found or decode fails → app reports error and stops
   - Does not search for frames or embedded frames
 
@@ -213,9 +216,18 @@ Number of digits in frame filenames:
 
 ### Frame Size
 
-Display size of animation (in pixels):
-- `frame_width: 128.0` = Width 128 pixels (default)
-- `frame_height: 128.0` = Height 128 pixels (default)
+Display size of animation window (in pixels):
+- `frame_width: 200.0` = Width 200 pixels (default)
+- `frame_height: 250.0` = Height 250 pixels (default)
+
+### Scale Percent
+
+Scale factor for the animation sprite (percentage):
+- `scale_percent: 40.0` = 40% of original size (default)
+- `scale_percent: 100.0` = 100% of original size (full size)
+- `scale_percent: 200.0` = 200% of original size (double size)
+
+**Note:** This controls the visual size of the animation sprite, while `frame_width` and `frame_height` control the window size.
 
 You can change to make animation larger/smaller:
 - `frame_width: 256.0, frame_height: 256.0` = Double the animation size
@@ -226,7 +238,7 @@ You can change to make animation larger/smaller:
 ### Window Title
 
 Window display title:
-- `window_title: "Arisu"` = Display "Arisu" (default)
+- `window_title: "Spray"` = Display "Spray" (default)
 - `window_title: "My Pet"` = Display "My Pet"
 - `window_title: "🐱 Neko"` = Can use emoji
 
@@ -248,13 +260,14 @@ Folder containing PNG frames (used when `mode` is `"frame"` or `"auto"`):
 ### GIF Path
 
 Path to GIF file (used when `mode` is `"gif"` or `"auto"`):
-- `gif_path: null` = Automatically look for `assets/anim.gif` (default)
+- `gif_path: "evernight.gif"` = Look for `assets/evernight.gif` (default)
+- `gif_path: null` = Use default `evernight.gif`
 - `gif_path: "animation.gif"` = Look for `assets/animation.gif`
 - `gif_path: "pets/cat.gif"` = Look for `assets/pets/cat.gif`
 
 **Note:**
 - Root folder is always `assets/`
-- If `gif_path` is `null` or not set, defaults to `anim.gif`
+- If `gif_path` is `null` or not set, defaults to `evernight.gif`
 - Only applies when `mode` is `"gif"` or `"auto"`
 - If `mode: "gif"` and file doesn't exist → app reports error
 - If `mode: "auto"` and file doesn't exist → app will try embedded frames
@@ -263,7 +276,7 @@ Path to GIF file (used when `mode` is `"gif"` or `"auto"`):
 
 **App automatically reloads config when the file changes!**
 
-When you edit and save `arisu.config.json`, the app will:
+When you edit and save `spray.config.json`, the app will:
 - 🔄 Automatically detect file changes
 - ⚡ Apply new config immediately
 - 🎬 Update FPS, window size, auto startup instantly
@@ -273,8 +286,8 @@ When you edit and save `arisu.config.json`, the app will:
 ## Running the Program
 
 **If using PNG frames (folder `assets/frames/`):**
-1. Arisu will automatically detect and count frames
-2. Load config from `arisu.config.json`
+1. Spray will automatically detect and count frames
+2. Load config from `spray.config.json`
 3. Apply FPS from config
 
 Console will display log:
@@ -285,9 +298,9 @@ Console will display log:
 ```
 
 **If using GIF (file in `assets/`):**
-1. Arisu will automatically detect GIF file
+1. Spray will automatically detect GIF file
 2. Decode all frames from GIF
-3. Load config from `arisu.config.json`
+3. Load config from `spray.config.json`
 4. Apply FPS from config (override original GIF FPS)
 
 Console will display log:
@@ -306,11 +319,11 @@ Console will display log:
 - Have a GIF animation file (e.g., `mypet.gif`)
 
 **Step 2: Place in assets folder**
-- Copy GIF file to `assets/` folder next to `Arisu.exe`
-- Rename to `anim.gif` (or keep original name and set `gif_path` in config)
+- Copy GIF file to `assets/` folder next to `Spray.exe`
+- Rename to `evernight.gif` (or keep original name and set `gif_path` in config)
 
-**Step 3: Run Arisu**
-- Run `Arisu.exe` - app will automatically decode and display animation!
+**Step 3: Run Spray**
+- Run `Spray.exe` - app will automatically decode and display animation!
 
 **Done!** No need to extract frames or do anything else.
 
@@ -329,8 +342,8 @@ ffmpeg -i mypet.mp4 -vf "fps=10,scale=128:128" frames/frame_%04d.png
 - Copy `frames/` folder to `assets/frames/` next to exe
 
 **Step 4: Configure**
-- Edit `arisu.config.json` to match fps and size used (e.g., `fps: 10`, `frame_width: 128.0`, `frame_height: 128.0`)
+- Edit `spray.config.json` to match fps and size used (e.g., `fps: 10`, `frame_width: 128.0`, `frame_height: 128.0`)
 
-**Step 5: Run Arisu**
-- Run `Arisu.exe` and enjoy your custom desktop pet!
+**Step 5: Run Spray**
+- Run `Spray.exe` and enjoy your custom desktop pet!
 
