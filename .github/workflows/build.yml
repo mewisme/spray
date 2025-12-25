@@ -201,33 +201,11 @@ jobs:
           Write-Host "- Path: $binary"
         shell: pwsh
 
-      - name: Build debug version for troubleshooting
-        run: |
-          # Temporarily remove windows subsystem for debug build
-          $mainFile = "src/main.rs"
-          $content = Get-Content $mainFile -Raw
-          $content = $content -replace '#!\[windows_subsystem = "windows"\]', '// #![windows_subsystem = "windows"]'
-          Set-Content $mainFile $content
-
-          cargo build --target ${{ matrix.target }}
-
-          # Restore original
-          git checkout $mainFile
-        shell: pwsh
-        continue-on-error: true
-
       - name: Upload release binary
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.binary_path }}
-
-      - name: Upload debug binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}-debug
-          path: target/${{ matrix.target }}/debug/Arisu.exe
-        continue-on-error: true
 
   release:
     name: Create Release
@@ -264,16 +242,7 @@ jobs:
 
       - name: Prepare release files
         run: |
-          # Rename debug executable
-          if [ -f "Arisu-windows-x86_64-debug/Arisu.exe" ]; then
-            mv Arisu-windows-x86_64-debug/Arisu.exe Arisu-windows-x86_64-debug/Arisu-debug.exe
-            echo "✅ Debug binary renamed to Arisu-debug.exe"
-          else
-            echo "⚠️ Debug binary not found"
-          fi
-
           ls -la Arisu-windows-x86_64/
-          ls -la Arisu-windows-x86_64-debug/ || true
         shell: bash
 
       - name: Create release package
@@ -282,10 +251,9 @@ jobs:
           cp Arisu-windows-x86_64/Arisu.exe release-package/
           cp README.md release-package/
           cp CUSTOM_FRAMES.md release-package/
-          cp TROUBLESHOOTING.md release-package/
 
           # Create example config
-          cat > release-package/arisu.config.example.json << 'EOF'
+          cat > release-package/arisu.config.json << 'EOF'
           {
             "fps": 5,
             "auto_startup": false,
@@ -318,10 +286,8 @@ jobs:
           - No additional runtime needed
 
           If app doesn't start:
-          - See TROUBLESHOOTING.md for detailed solutions
           - Check Windows Defender/Antivirus
           - Try running as administrator
-          - Use Arisu-debug.exe to see error messages
 
           More info: https://github.com/mewisme/arisu
           EOF
@@ -340,11 +306,9 @@ jobs:
           ## 📦 Files Included
 
           - **Arisu.exe** - Main executable (release build, optimized)
-          - **Arisu-debug.exe** - Debug executable (shows console, for troubleshooting)
-          - **arisu.config.example.json** - Example configuration file
+          - **arisu.config.json** - Example configuration file
           - **README.md** - Full documentation
           - **CUSTOM_FRAMES.md** - Guide for custom animations
-          - **TROUBLESHOOTING.md** - Fix common issues
           - **QUICKSTART.txt** - Quick start guide
 
           ## 🚀 Quick Start
@@ -360,8 +324,6 @@ jobs:
           1. Check Windows Defender - it may block the executable
           2. Right-click → Properties → Unblock
           3. Try running as administrator
-          4. See **TROUBLESHOOTING.md** for detailed fixes
-          5. Download **Arisu-debug.exe** to see error messages in console
 
           **Requirements:**
           - Windows 10/11 (64-bit)
@@ -390,11 +352,9 @@ jobs:
         with:
           files: |
             Arisu-windows-x86_64/Arisu.exe
-            Arisu-windows-x86_64-debug/Arisu-debug.exe
-            release-package/arisu.config.example.json
+            release-package/arisu.config.json
             release-package/README.md
             release-package/CUSTOM_FRAMES.md
-            release-package/TROUBLESHOOTING.md
             release-package/QUICKSTART.txt
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v{0}', needs.check-version.outputs.version) }}
           name: ${{ steps.commit-info.outputs.message_raw }}
